@@ -111,7 +111,7 @@ reliable key when you map to another benchmark.
 
 | # | Control | CIS | Verified |
 | --- | --- | --- | --- |
-| 71 | auditd is installed and enabled | 6.2.1.1, 6.2.1.2 | live (enabled) |
+| 71 | auditd is installed and enabled | 6.2.1.1, 6.2.1.2 | lint |
 | 72 | Audit backlog limit is sufficient | 6.2.1.4 | file |
 | 73 | Audit log size, rotation and retention configured | 6.2.2.1, 6.2.2.2 | file |
 | 74 | System behaviour when audit storage fills up | 6.2.2.3, 6.2.2.4 | file |
