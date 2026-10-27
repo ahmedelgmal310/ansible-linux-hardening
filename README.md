@@ -95,7 +95,7 @@ The verify playbook ([molecule/default/verify.yml](molecule/default/verify.yml))
 checks the running system, not just files:
 
 - `sshd -T` effective values for 22 settings, plus real logins from the runner
-  with a throwaway key generated during the job: an admin can log in; a user
+  with a throwaway key created during the job: an admin can log in; a user
   outside `AllowGroups` with a valid key is rejected; root is rejected; the server
   offers `publickey` only; a CBC cipher handshake fails; `sudo -n` is refused for
   a password-sudo user and allowed for the one user configured for it.
