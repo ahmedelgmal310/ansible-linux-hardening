@@ -12,10 +12,13 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 {% else %}
 # Container images ship PAM without an authselect profile; select the stock
-# "local" profile a normal installation has, so sudo can run its PAM stack.
+# "local" profile a normal installation has.
+# EL9 keeps /etc/shadow at mode 0000. Inside this container the setuid PAM
+# helper (unix_chkpwd) cannot override that and fails with EACCES, which breaks
+# every sudo call, so the test image makes the file readable by root only.
 RUN dnf -y install systemd dbus python3 sudo procps-ng iproute authselect \
  && (authselect select local --force || authselect select minimal --force) \
- && pwconv \
+ && chmod 0400 /etc/shadow /etc/gshadow \
  && dnf clean all
 {% endif %}
 

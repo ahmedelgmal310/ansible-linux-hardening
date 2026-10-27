@@ -132,13 +132,6 @@ jobs:
           molecule create
           molecule prepare
 
-      - name: Trace PAM helper (temporary)
-        if: contains(matrix.distro, 'linux9')
-        run: |
-          docker exec instance dnf -y -q install strace >/dev/null
-          docker exec instance strace -f -e trace=file,read -s 120 /usr/sbin/unix_chkpwd root chkexpiry 2>&1 | tail -n 60 || true
-          docker exec instance python3 -c "import spwd; print(spwd.getspnam('root'))" || true
-
       - name: Benchmark before hardening (Lynis)
         run: scripts/ci/lynis-scan.sh instance before "$RUNNER_TEMP/lynis" "$RESULTS"
 
@@ -169,12 +162,6 @@ jobs:
           docker exec instance systemctl --failed --no-pager || true
           docker exec instance journalctl --no-pager -n 150 -p warning || true
           docker exec instance journalctl --no-pager -n 60 -u node_exporter || true
-          docker exec instance sh -c 'ls -l /etc/pam.d/ | head -40; cat /etc/pam.d/sudo /etc/pam.d/system-auth' || true
-          docker exec instance sh -c 'grep "^root" /etc/shadow; ls -l /etc/shadow; sudo -n true; echo "sudo rc=$?"' || true
-          docker exec instance sh -c 'getent passwd root; getent shadow root; echo "getent rc=$?"; grep -E "^(passwd|shadow)" /etc/nsswitch.conf' || true
-          docker exec instance sh -c 'ls -l /usr/sbin/unix_chkpwd; getcap /usr/sbin/unix_chkpwd; grep Cap /proc/self/status' || true
-          docker exec instance sh -c 'ls -la /sys/fs/selinux 2>&1 | head -3; grep selinux /proc/filesystems /proc/mounts' || true
-          docker exec instance sh -c '/usr/sbin/unix_chkpwd root chkexpiry; echo "chkpwd rc=$?"; rpm -q pam sudo shadow-utils' || true
 
       - name: Upload evidence
         if: always()
