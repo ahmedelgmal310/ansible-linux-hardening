@@ -156,6 +156,15 @@ jobs:
       - name: Publish results to the job summary
         run: python scripts/ci/summarize.py distro "${{ matrix.distro }}" "$RESULTS" | tee -a "$GITHUB_STEP_SUMMARY"
 
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          docker exec instance systemctl --failed --no-pager || true
+          docker exec instance journalctl --no-pager -n 150 -p warning || true
+          docker exec instance journalctl --no-pager -n 60 -u node_exporter || true
+          docker exec instance sh -c 'ls -l /etc/pam.d/ | head -40; cat /etc/pam.d/sudo /etc/pam.d/system-auth' || true
+          docker exec instance sh -c 'grep "^root" /etc/shadow; ls -l /etc/shadow; sudo -n true; echo "sudo rc=$?"' || true
+
       - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

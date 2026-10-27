@@ -30,11 +30,11 @@
   changed_when: false
   check_mode: false
 
-- name: Keep only supported algorithms
+- name: Keep only supported algorithms (preserving the configured order)
   ansible.builtin.set_fact:
-    ssh_hardening_effective_ciphers: "{{ ssh_hardening_ciphers | intersect(ssh_hardening_supported.results[0].stdout_lines) }}"
-    ssh_hardening_effective_macs: "{{ ssh_hardening_macs | intersect(ssh_hardening_supported.results[1].stdout_lines) }}"
-    ssh_hardening_effective_kex: "{{ ssh_hardening_kex | intersect(ssh_hardening_supported.results[2].stdout_lines) }}"
+    ssh_hardening_effective_ciphers: "{{ ssh_hardening_ciphers | select('in', ssh_hardening_supported.results[0].stdout_lines) | list }}"
+    ssh_hardening_effective_macs: "{{ ssh_hardening_macs | select('in', ssh_hardening_supported.results[1].stdout_lines) | list }}"
+    ssh_hardening_effective_kex: "{{ ssh_hardening_kex | select('in', ssh_hardening_supported.results[2].stdout_lines) | list }}"
 
 - name: Fail when no strong algorithm is available
   ansible.builtin.assert:
