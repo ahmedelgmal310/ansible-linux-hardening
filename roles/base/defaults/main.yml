@@ -7,7 +7,7 @@ base_packages:
   - logrotate
 base_extra_packages: []
 
-# CIS 2.2.x / 2.3.x: legacy clients and services that must not be installed.
+# CIS 2.2.x: legacy clients and services that must not be installed.
 # The distro-specific list from vars/ is merged with this one.
 base_remove_packages: []
 
@@ -16,18 +16,18 @@ base_enable_epel: true
 
 base_timezone: UTC
 
-# CIS 2.1.x: time synchronisation with chrony.
+# CIS 2.3.x: time synchronisation with chrony.
 base_chrony_pools:
   - 0.pool.ntp.org
   - 1.pool.ntp.org
 base_chrony_makestep: "1.0 3"
 
-# CIS 1.9 / 1.2.x: automatic security updates.
+# CIS 1.2.2.1: automatic security updates.
 base_auto_security_updates: true
 base_auto_reboot: false
 base_auto_reboot_time: "03:30"
 
-# CIS 4.2.x: journald retention and limits.
+# CIS 6.1.1.x: journald retention and limits.
 base_journald_storage: persistent
 base_journald_compress: true
 base_journald_system_max_use: 500M
@@ -35,7 +35,7 @@ base_journald_system_keep_free: 1G
 base_journald_max_retention: 1month
 base_journald_forward_to_syslog: false
 
-# CIS 1.7.x: login banners.
+# CIS 1.6.x: login banners.
 base_manage_banners: true
 base_issue_text: |
   Authorized uses only. All activity may be monitored and reported.

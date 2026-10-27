@@ -41,7 +41,7 @@ argument_specs:
             src: any
             comment: ssh
       firewall_ufw_default_incoming:
-        description: Ufw default incoming. ufw (CIS 3.5.1.x).
+        description: Ufw default incoming. ufw (CIS Ubuntu 4.1.x).
         type: str
         choices:
           - allow
@@ -49,7 +49,7 @@ argument_specs:
           - reject
         default: deny
       firewall_ufw_default_outgoing:
-        description: Ufw default outgoing. ufw (CIS 3.5.1.x).
+        description: Ufw default outgoing. ufw (CIS Ubuntu 4.1.x).
         type: str
         choices:
           - allow
@@ -57,7 +57,7 @@ argument_specs:
           - reject
         default: allow
       firewall_ufw_default_routed:
-        description: Ufw default routed. ufw (CIS 3.5.1.x).
+        description: Ufw default routed. ufw (CIS Ubuntu 4.1.x).
         type: str
         choices:
           - allow
@@ -65,7 +65,7 @@ argument_specs:
           - reject
         default: deny
       firewall_ufw_logging:
-        description: Ufw logging. ufw (CIS 3.5.1.x).
+        description: Ufw logging. ufw (CIS Ubuntu 4.1.x).
         type: str
         choices:
           - 'on'
@@ -76,11 +76,11 @@ argument_specs:
           - full
         default: low
       firewall_firewalld_zone:
-        description: Firewalld zone. firewalld (CIS 3.5.2.x / 4.2.x on RHEL).
+        description: Firewalld zone. firewalld (CIS RHEL 9 section 4).
         type: str
         default: public
       firewall_firewalld_target:
-        description: Firewalld target. firewalld (CIS 3.5.2.x / 4.2.x on RHEL).
+        description: Firewalld target. firewalld (CIS RHEL 9 section 4).
         type: str
         choices:
           - default
@@ -89,7 +89,7 @@ argument_specs:
           - '%%REJECT%%'
         default: DROP
       firewall_firewalld_remove_services:
-        description: Firewalld remove services. firewalld (CIS 3.5.2.x / 4.2.x on RHEL).
+        description: Firewalld remove services. firewalld (CIS RHEL 9 section 4).
         type: list
         elements: str
         default:

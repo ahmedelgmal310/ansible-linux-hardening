@@ -132,6 +132,13 @@ jobs:
           molecule create
           molecule prepare
 
+      - name: Trace PAM helper (temporary)
+        if: contains(matrix.distro, 'linux9')
+        run: |
+          docker exec instance dnf -y -q install strace >/dev/null
+          docker exec instance strace -f -e trace=file,read -s 120 /usr/sbin/unix_chkpwd root chkexpiry 2>&1 | tail -n 60 || true
+          docker exec instance python3 -c "import spwd; print(spwd.getspnam('root'))" || true
+
       - name: Benchmark before hardening (Lynis)
         run: scripts/ci/lynis-scan.sh instance before "$RUNNER_TEMP/lynis" "$RESULTS"
 

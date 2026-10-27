@@ -18,8 +18,8 @@ argument_specs:
         elements: str
         default: []
       base_remove_packages:
-        description: 'Remove packages. CIS 2.2.x / 2.3.x: legacy clients and services that must not be installed. The distro-specific list from vars/ is
-          merged with this one.'
+        description: 'Remove packages. CIS 2.2.x: legacy clients and services that must not be installed. The distro-specific list from vars/ is merged
+          with this one.'
         type: list
         elements: str
         default: []
@@ -32,30 +32,30 @@ argument_specs:
         type: str
         default: UTC
       base_chrony_pools:
-        description: 'Chrony pools. CIS 2.1.x: time synchronisation with chrony.'
+        description: 'Chrony pools. CIS 2.3.x: time synchronisation with chrony.'
         type: list
         elements: str
         default:
           - 0.pool.ntp.org
           - 1.pool.ntp.org
       base_chrony_makestep:
-        description: 'Chrony makestep. CIS 2.1.x: time synchronisation with chrony.'
+        description: 'Chrony makestep. CIS 2.3.x: time synchronisation with chrony.'
         type: str
         default: 1.0 3
       base_auto_security_updates:
-        description: 'Auto security updates. CIS 1.9 / 1.2.x: automatic security updates.'
+        description: 'Auto security updates. CIS 1.2.2.1: automatic security updates.'
         type: bool
         default: true
       base_auto_reboot:
-        description: 'Auto reboot. CIS 1.9 / 1.2.x: automatic security updates.'
+        description: 'Auto reboot. CIS 1.2.2.1: automatic security updates.'
         type: bool
         default: false
       base_auto_reboot_time:
-        description: 'Auto reboot time. CIS 1.9 / 1.2.x: automatic security updates.'
+        description: 'Auto reboot time. CIS 1.2.2.1: automatic security updates.'
         type: str
         default: 03:30
       base_journald_storage:
-        description: 'Journald storage. CIS 4.2.x: journald retention and limits.'
+        description: 'Journald storage. CIS 6.1.1.x: journald retention and limits.'
         type: str
         choices:
           - volatile
@@ -64,37 +64,37 @@ argument_specs:
           - none
         default: persistent
       base_journald_compress:
-        description: 'Journald compress. CIS 4.2.x: journald retention and limits.'
+        description: 'Journald compress. CIS 6.1.1.x: journald retention and limits.'
         type: bool
         default: true
       base_journald_system_max_use:
-        description: 'Journald system max use. CIS 4.2.x: journald retention and limits.'
+        description: 'Journald system max use. CIS 6.1.1.x: journald retention and limits.'
         type: str
         default: 500M
       base_journald_system_keep_free:
-        description: 'Journald system keep free. CIS 4.2.x: journald retention and limits.'
+        description: 'Journald system keep free. CIS 6.1.1.x: journald retention and limits.'
         type: str
         default: 1G
       base_journald_max_retention:
-        description: 'Journald max retention. CIS 4.2.x: journald retention and limits.'
+        description: 'Journald max retention. CIS 6.1.1.x: journald retention and limits.'
         type: str
         default: 1month
       base_journald_forward_to_syslog:
-        description: 'Journald forward to syslog. CIS 4.2.x: journald retention and limits.'
+        description: 'Journald forward to syslog. CIS 6.1.1.x: journald retention and limits.'
         type: bool
         default: false
       base_manage_banners:
-        description: 'Manage banners. CIS 1.7.x: login banners.'
+        description: 'Manage banners. CIS 1.6.x: login banners.'
         type: bool
         default: true
       base_issue_text:
-        description: 'Issue text. CIS 1.7.x: login banners.'
+        description: 'Issue text. CIS 1.6.x: login banners.'
         type: str
         default: 'Authorized uses only. All activity may be monitored and reported.
 
           '
       base_motd_text:
-        description: 'Motd text. CIS 1.7.x: login banners.'
+        description: 'Motd text. CIS 1.6.x: login banners.'
         type: str
         default: 'This system is managed by Ansible. Manual changes will be overwritten.
 

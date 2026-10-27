@@ -10,13 +10,13 @@ firewall_backend: auto
 firewall_allow:
   - { port: 22, proto: tcp, src: any, comment: ssh }
 
-# ufw (CIS 3.5.1.x)
+# ufw (CIS Ubuntu 4.1.x)
 firewall_ufw_default_incoming: deny
 firewall_ufw_default_outgoing: allow
 firewall_ufw_default_routed: deny
 firewall_ufw_logging: low
 
-# firewalld (CIS 3.5.2.x / 4.2.x on RHEL)
+# firewalld (CIS RHEL 9 section 4)
 firewall_firewalld_zone: public
 firewall_firewalld_target: DROP
 firewall_firewalld_remove_services:

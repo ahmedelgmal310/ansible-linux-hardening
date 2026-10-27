@@ -70,7 +70,7 @@ argument_specs:
           - jffs2
           - udf
       kernel_hardening_disabled_modules:
-        description: 'Disabled modules. CIS 3.2.x and 1.1.1.10: uncommon network protocols and USB storage.'
+        description: 'Disabled modules. CIS 3.2.x and 1.1.1.x: uncommon network protocols and USB storage.'
         type: list
         elements: str
         default:

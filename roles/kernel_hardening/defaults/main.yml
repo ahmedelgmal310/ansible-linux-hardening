@@ -65,7 +65,7 @@ kernel_hardening_disabled_filesystems:
   - jffs2
   - udf
 
-# CIS 3.2.x and 1.1.1.10: uncommon network protocols and USB storage.
+# CIS 3.2.x and 1.1.1.x: uncommon network protocols and USB storage.
 kernel_hardening_disabled_modules:
   - dccp
   - sctp

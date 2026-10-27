@@ -61,6 +61,7 @@
     owner: root
     group: root
     mode: "0600"
+    backup: "{{ ssh_hardening_backup }}"
     validate: /usr/sbin/sshd -t -f %s
   notify: Restart sshd
 

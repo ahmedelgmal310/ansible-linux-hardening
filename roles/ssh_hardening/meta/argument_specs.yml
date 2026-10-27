@@ -24,7 +24,7 @@ argument_specs:
         elements: str
         default: []
       ssh_hardening_permit_root_login:
-        description: Permit root login. CIS 5.1.20 / 5.1.19 / 5.1.9.
+        description: Permit root login. CIS 5.1.20 (PermitRootLogin) and key-only authentication.
         type: str
         choices:
           - 'no'
@@ -33,39 +33,46 @@ argument_specs:
           - 'yes'
         default: 'no'
       ssh_hardening_password_authentication:
-        description: Password authentication. CIS 5.1.20 / 5.1.19 / 5.1.9.
+        description: Password authentication. CIS 5.1.20 (PermitRootLogin) and key-only authentication.
         type: bool
         default: false
       ssh_hardening_kbd_interactive_authentication:
-        description: Kbd interactive authentication. CIS 5.1.20 / 5.1.19 / 5.1.9.
+        description: Kbd interactive authentication. CIS 5.1.20 (PermitRootLogin) and key-only authentication.
         type: bool
         default: false
       ssh_hardening_client_alive_interval:
-        description: Client alive interval. CIS 5.1.7 / 5.1.10 / 5.1.13-16 / 5.1.21.
+        description: Client alive interval. CIS 5.1.7 (ClientAlive), 5.1.13 (LoginGraceTime), 5.1.14 (LogLevel), 5.1.16 (MaxAuthTries), 5.1.17 (MaxSessions),
+          5.1.18 (MaxStartups).
         type: int
         default: 300
       ssh_hardening_client_alive_count_max:
-        description: Client alive count max. CIS 5.1.7 / 5.1.10 / 5.1.13-16 / 5.1.21.
+        description: Client alive count max. CIS 5.1.7 (ClientAlive), 5.1.13 (LoginGraceTime), 5.1.14 (LogLevel), 5.1.16 (MaxAuthTries), 5.1.17 (MaxSessions),
+          5.1.18 (MaxStartups).
         type: int
         default: 2
       ssh_hardening_login_grace_time:
-        description: Login grace time. CIS 5.1.7 / 5.1.10 / 5.1.13-16 / 5.1.21.
+        description: Login grace time. CIS 5.1.7 (ClientAlive), 5.1.13 (LoginGraceTime), 5.1.14 (LogLevel), 5.1.16 (MaxAuthTries), 5.1.17 (MaxSessions),
+          5.1.18 (MaxStartups).
         type: int
         default: 60
       ssh_hardening_max_auth_tries:
-        description: Max auth tries. CIS 5.1.7 / 5.1.10 / 5.1.13-16 / 5.1.21.
+        description: Max auth tries. CIS 5.1.7 (ClientAlive), 5.1.13 (LoginGraceTime), 5.1.14 (LogLevel), 5.1.16 (MaxAuthTries), 5.1.17 (MaxSessions), 5.1.18
+          (MaxStartups).
         type: int
         default: 3
       ssh_hardening_max_sessions:
-        description: Max sessions. CIS 5.1.7 / 5.1.10 / 5.1.13-16 / 5.1.21.
+        description: Max sessions. CIS 5.1.7 (ClientAlive), 5.1.13 (LoginGraceTime), 5.1.14 (LogLevel), 5.1.16 (MaxAuthTries), 5.1.17 (MaxSessions), 5.1.18
+          (MaxStartups).
         type: int
         default: 4
       ssh_hardening_max_startups:
-        description: Max startups. CIS 5.1.7 / 5.1.10 / 5.1.13-16 / 5.1.21.
+        description: Max startups. CIS 5.1.7 (ClientAlive), 5.1.13 (LoginGraceTime), 5.1.14 (LogLevel), 5.1.16 (MaxAuthTries), 5.1.17 (MaxSessions), 5.1.18
+          (MaxStartups).
         type: str
         default: 10:30:60
       ssh_hardening_log_level:
-        description: Log level. CIS 5.1.7 / 5.1.10 / 5.1.13-16 / 5.1.21.
+        description: Log level. CIS 5.1.7 (ClientAlive), 5.1.13 (LoginGraceTime), 5.1.14 (LogLevel), 5.1.16 (MaxAuthTries), 5.1.17 (MaxSessions), 5.1.18
+          (MaxStartups).
         type: str
         choices:
           - QUIET
@@ -76,19 +83,19 @@ argument_specs:
           - DEBUG
         default: VERBOSE
       ssh_hardening_x11_forwarding:
-        description: X11 forwarding.
+        description: 'X11 forwarding. CIS 5.1.8: disable forwarding.'
         type: bool
         default: false
       ssh_hardening_allow_tcp_forwarding:
-        description: Allow tcp forwarding.
+        description: 'Allow tcp forwarding. CIS 5.1.8: disable forwarding.'
         type: bool
         default: false
       ssh_hardening_allow_agent_forwarding:
-        description: Allow agent forwarding.
+        description: 'Allow agent forwarding. CIS 5.1.8: disable forwarding.'
         type: bool
         default: false
       ssh_hardening_sftp_enabled:
-        description: Sftp enabled.
+        description: Sftp enabled. SFTP through the in-process internal-sftp server.
         type: bool
         default: true
       ssh_hardening_banner_enabled:
@@ -146,6 +153,10 @@ argument_specs:
         default:
           - ed25519
           - rsa
+      ssh_hardening_backup:
+        description: Backup. Keep a timestamped copy of the previous sshd_config on every change.
+        type: bool
+        default: true
       ssh_hardening_disable_socket_activation:
         description: Disable socket activation. On Debian/Ubuntu, run sshd as a normal service instead of socket activation so that Port/ListenAddress in
           sshd_config are always honoured.
