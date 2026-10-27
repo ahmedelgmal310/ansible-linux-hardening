@@ -11,6 +11,14 @@
          | combine(kernel_hardening_ipv6_sysctls if kernel_hardening_ipv6.stat.exists else {})
          | combine(kernel_hardening_extra_sysctls) }}
 
+- name: Create sysctl drop-in directory
+  ansible.builtin.file:
+    path: "{{ kernel_hardening_sysctl_file | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
 - name: Apply and persist kernel parameters
   ansible.posix.sysctl:
     name: "{{ item.key }}"
