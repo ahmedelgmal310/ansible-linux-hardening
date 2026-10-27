@@ -11,7 +11,11 @@ RUN apt-get update \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 {% else %}
-RUN dnf -y install systemd dbus python3 sudo procps-ng iproute \
+# Container images ship PAM without an authselect profile; select the stock
+# "local" profile a normal installation has, so sudo can run its PAM stack.
+RUN dnf -y install systemd dbus python3 sudo procps-ng iproute authselect \
+ && (authselect select local --force || authselect select minimal --force) \
+ && pwconv \
  && dnf clean all
 {% endif %}
 
