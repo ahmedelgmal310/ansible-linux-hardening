@@ -1,0 +1,39 @@
+---
+# Group that is allowed to log in over SSH (consumed by ssh_hardening AllowGroups).
+users_ssh_group: sshusers
+
+# Administrative accounts. Each entry:
+#   name:          login name (required)
+#   comment:       GECOS field
+#   shell:         login shell (default /bin/bash)
+#   groups:        extra supplementary groups
+#   ssh_keys:      list of public keys; the authorized_keys file is managed exclusively
+#   ssh_access:    add the user to users_ssh_group (default true)
+#   sudo:          grant sudo through /etc/sudoers.d (default true)
+#   sudo_nopasswd: allow sudo without a password (default false, opt in per user)
+#   state:         present | absent (default present)
+users_admins: []
+
+# Accounts that must not exist on any host.
+users_remove: []
+
+users_exclusive_keys: true
+
+# CIS 5.4.2.x: lock the root password; access goes through named sudo users.
+users_lock_root: true
+
+# CIS 5.2.x: sudo hardening.
+users_sudo_logfile: /var/log/sudo.log
+users_sudo_timestamp_timeout: 15
+
+# CIS 5.4.1.x / 5.3.3.x: password policy for local passwords.
+users_pass_max_days: 365
+users_pass_min_days: 1
+users_pass_warn_age: 7
+users_login_umask: "027"
+users_pwquality:
+  minlen: 14
+  minclass: 4
+  maxrepeat: 3
+  dictcheck: 1
+  enforce_for_root: true

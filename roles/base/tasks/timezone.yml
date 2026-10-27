@@ -1,0 +1,16 @@
+---
+- name: Point /etc/localtime at the configured zone
+  ansible.builtin.file:
+    src: "/usr/share/zoneinfo/{{ base_timezone }}"
+    dest: /etc/localtime
+    state: link
+    force: true
+
+- name: Write /etc/timezone (Debian family)
+  when: ansible_facts['os_family'] == 'Debian'
+  ansible.builtin.copy:
+    dest: /etc/timezone
+    content: "{{ base_timezone }}\n"
+    owner: root
+    group: root
+    mode: "0644"

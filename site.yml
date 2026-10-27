@@ -1,0 +1,53 @@
+---
+# Apply the full hardening baseline.
+#
+#   Dry run first:   ansible-playbook site.yml --check --diff --limit canary
+#   Rolling rollout: ansible-playbook site.yml -e rollout_serial=10%
+#   One control:     ansible-playbook site.yml --tags ssh
+- name: Harden Linux hosts
+  hosts: "{{ target_hosts | default('all') }}"
+  become: true
+  serial: "{{ rollout_serial | default('100%') }}"
+  max_fail_percentage: "{{ rollout_max_fail_percentage | default(0) }}"
+  any_errors_fatal: false
+
+  pre_tasks:
+    - name: Refuse to run on unsupported distributions
+      ansible.builtin.assert:
+        that:
+          - >-
+            (ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_major_version'] == '24')
+            or (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_major_version'] in ['12', '13'])
+            or (ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] == '9')
+        fail_msg: >-
+          {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }} is not a supported target.
+        quiet: true
+      tags:
+        - always
+
+  roles:
+    - role: base
+      tags:
+        - base
+    - role: users
+      tags:
+        - users
+    - role: ssh_hardening
+      tags:
+        - ssh
+    - role: firewall
+      tags:
+        - firewall
+    - role: kernel_hardening
+      tags:
+        - kernel
+    - role: audit
+      tags:
+        - audit
+    - role: fail2ban
+      tags:
+        - fail2ban
+    - role: node_exporter
+      when: node_exporter_enabled | default(true) | bool
+      tags:
+        - monitoring

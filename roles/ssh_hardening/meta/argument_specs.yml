@@ -1,0 +1,153 @@
+---
+argument_specs:
+  main:
+    short_description: CIS aligned OpenSSH server configuration validated with sshd -t
+    options:
+      ssh_hardening_port:
+        description: Port.
+        type: int
+        default: 22
+      ssh_hardening_listen_addresses:
+        description: Listen addresses.
+        type: list
+        elements: str
+        default: []
+      ssh_hardening_allow_groups:
+        description: 'Allow groups. CIS 5.1.4: restrict who may log in. Empty lists disable the directive.'
+        type: list
+        elements: str
+        default:
+          - sshusers
+      ssh_hardening_allow_users:
+        description: 'Allow users. CIS 5.1.4: restrict who may log in. Empty lists disable the directive.'
+        type: list
+        elements: str
+        default: []
+      ssh_hardening_permit_root_login:
+        description: Permit root login. CIS 5.1.20 / 5.1.19 / 5.1.9.
+        type: str
+        choices:
+          - 'no'
+          - prohibit-password
+          - forced-commands-only
+          - 'yes'
+        default: 'no'
+      ssh_hardening_password_authentication:
+        description: Password authentication. CIS 5.1.20 / 5.1.19 / 5.1.9.
+        type: bool
+        default: false
+      ssh_hardening_kbd_interactive_authentication:
+        description: Kbd interactive authentication. CIS 5.1.20 / 5.1.19 / 5.1.9.
+        type: bool
+        default: false
+      ssh_hardening_client_alive_interval:
+        description: Client alive interval. CIS 5.1.7 / 5.1.10 / 5.1.13-16 / 5.1.21.
+        type: int
+        default: 300
+      ssh_hardening_client_alive_count_max:
+        description: Client alive count max. CIS 5.1.7 / 5.1.10 / 5.1.13-16 / 5.1.21.
+        type: int
+        default: 2
+      ssh_hardening_login_grace_time:
+        description: Login grace time. CIS 5.1.7 / 5.1.10 / 5.1.13-16 / 5.1.21.
+        type: int
+        default: 60
+      ssh_hardening_max_auth_tries:
+        description: Max auth tries. CIS 5.1.7 / 5.1.10 / 5.1.13-16 / 5.1.21.
+        type: int
+        default: 3
+      ssh_hardening_max_sessions:
+        description: Max sessions. CIS 5.1.7 / 5.1.10 / 5.1.13-16 / 5.1.21.
+        type: int
+        default: 4
+      ssh_hardening_max_startups:
+        description: Max startups. CIS 5.1.7 / 5.1.10 / 5.1.13-16 / 5.1.21.
+        type: str
+        default: 10:30:60
+      ssh_hardening_log_level:
+        description: Log level. CIS 5.1.7 / 5.1.10 / 5.1.13-16 / 5.1.21.
+        type: str
+        choices:
+          - QUIET
+          - FATAL
+          - ERROR
+          - INFO
+          - VERBOSE
+          - DEBUG
+        default: VERBOSE
+      ssh_hardening_x11_forwarding:
+        description: X11 forwarding.
+        type: bool
+        default: false
+      ssh_hardening_allow_tcp_forwarding:
+        description: Allow tcp forwarding.
+        type: bool
+        default: false
+      ssh_hardening_allow_agent_forwarding:
+        description: Allow agent forwarding.
+        type: bool
+        default: false
+      ssh_hardening_sftp_enabled:
+        description: Sftp enabled.
+        type: bool
+        default: true
+      ssh_hardening_banner_enabled:
+        description: 'Banner enabled. CIS 5.1.5: warning banner.'
+        type: bool
+        default: true
+      ssh_hardening_banner_text:
+        description: 'Banner text. CIS 5.1.5: warning banner.'
+        type: str
+        default: 'Authorized access only. Connections are logged and monitored.
+
+          Disconnect immediately if you are not an authorized user.
+
+          '
+      ssh_hardening_ciphers:
+        description: 'Ciphers. CIS 5.1.6 / 5.1.12 / 5.1.15: strong algorithms only. Entries the installed OpenSSH does not support are dropped automatically
+          (checked with `ssh -Q`).'
+        type: list
+        elements: str
+        default:
+          - chacha20-poly1305@openssh.com
+          - aes256-gcm@openssh.com
+          - aes128-gcm@openssh.com
+          - aes256-ctr
+          - aes192-ctr
+          - aes128-ctr
+      ssh_hardening_macs:
+        description: 'Macs. CIS 5.1.6 / 5.1.12 / 5.1.15: strong algorithms only. Entries the installed OpenSSH does not support are dropped automatically
+          (checked with `ssh -Q`).'
+        type: list
+        elements: str
+        default:
+          - hmac-sha2-512-etm@openssh.com
+          - hmac-sha2-256-etm@openssh.com
+          - umac-128-etm@openssh.com
+      ssh_hardening_kex:
+        description: 'Kex. CIS 5.1.6 / 5.1.12 / 5.1.15: strong algorithms only. Entries the installed OpenSSH does not support are dropped automatically
+          (checked with `ssh -Q`).'
+        type: list
+        elements: str
+        default:
+          - mlkem768x25519-sha256
+          - sntrup761x25519-sha512
+          - sntrup761x25519-sha512@openssh.com
+          - curve25519-sha256
+          - curve25519-sha256@libssh.org
+          - diffie-hellman-group18-sha512
+          - diffie-hellman-group16-sha512
+          - diffie-hellman-group-exchange-sha256
+      ssh_hardening_host_key_types:
+        description: 'Host key types. CIS 5.1.6 / 5.1.12 / 5.1.15: strong algorithms only. Entries the installed OpenSSH does not support are dropped automatically
+          (checked with `ssh -Q`).'
+        type: list
+        elements: str
+        default:
+          - ed25519
+          - rsa
+      ssh_hardening_disable_socket_activation:
+        description: Disable socket activation. On Debian/Ubuntu, run sshd as a normal service instead of socket activation so that Port/ListenAddress in
+          sshd_config are always honoured.
+        type: bool
+        default: true

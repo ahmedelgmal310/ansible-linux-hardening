@@ -1,0 +1,35 @@
+# Managed by Ansible. Local changes will be overwritten.
+[Unit]
+Description=Prometheus node exporter
+Documentation=https://github.com/prometheus/node_exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User={{ node_exporter_user }}
+Group={{ node_exporter_user }}
+ExecStart=/usr/local/bin/node_exporter --web.listen-address={{ node_exporter_listen_address }}{% for arg in node_exporter_extra_args %} {{ arg }}{% endfor %}
+
+Restart=on-failure
+RestartSec=5
+
+# Sandboxing
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

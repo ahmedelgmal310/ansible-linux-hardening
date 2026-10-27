@@ -1,0 +1,40 @@
+---
+- name: Install ufw
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+
+# Rules are added before the default policy is switched and the firewall is
+# enabled, so an SSH session is never cut off half way through a run.
+- name: Allow inbound traffic from the allowlist
+  community.general.ufw:
+    rule: allow
+    port: "{{ item.port | string }}"
+    proto: "{{ item.proto | default('tcp') }}"
+    from_ip: "{{ item.src | default('any') }}"
+    comment: "{{ item.comment | default(omit) }}"
+  loop: "{{ firewall_allow }}"
+  loop_control:
+    label: "{{ item.port }}/{{ item.proto | default('tcp') }} from {{ item.src | default('any') }}"
+
+- name: Set default policies
+  community.general.ufw:
+    default: "{{ item.policy }}"
+    direction: "{{ item.direction }}"
+  loop:
+    - { direction: incoming, policy: "{{ firewall_ufw_default_incoming }}" }
+    - { direction: outgoing, policy: "{{ firewall_ufw_default_outgoing }}" }
+    - { direction: routed, policy: "{{ firewall_ufw_default_routed }}" }
+
+- name: Enable logging
+  community.general.ufw:
+    logging: "{{ firewall_ufw_logging }}"
+
+- name: Enable ufw
+  community.general.ufw:
+    state: enabled
+
+- name: Enable ufw at boot
+  ansible.builtin.systemd_service:
+    name: ufw
+    enabled: true

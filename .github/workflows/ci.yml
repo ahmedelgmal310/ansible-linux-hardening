@@ -1,0 +1,189 @@
+---
+name: CI
+
+"on":
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    # Weekly run catches upstream package or image changes that break a role.
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.13"
+  LYNIS_VERSION: "3.1.7"
+  LYNIS_COMMIT: 2e99f92265760b73fd6b139868eb8d4116624030
+  PY_COLORS: "0"
+  ANSIBLE_FORCE_COLOR: "0"
+  ANSIBLE_NOCOLOR: "1"
+
+jobs:
+  lint:
+    name: Lint (yamllint, ansible-lint)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install tooling
+        run: |
+          python -m pip install -r requirements.txt
+          ansible-galaxy collection install -r requirements.yml
+
+      - name: yamllint
+        run: yamllint --strict .
+
+      - name: ansible-lint (production profile)
+        run: ansible-lint --profile production
+
+  secrets:
+    name: Secret scan (Gitleaks)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Gitleaks
+        run: |
+          docker run --rm \
+            -v "${GITHUB_WORKSPACE}:/repo" \
+            -e GIT_CONFIG_COUNT=1 \
+            -e GIT_CONFIG_KEY_0=safe.directory \
+            -e GIT_CONFIG_VALUE_0='*' \
+            ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
+            git --redact --verbose --exit-code 1 /repo
+
+  molecule:
+    name: Molecule (${{ matrix.distro }})
+    needs: lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: ubuntu2404
+            image: mirror.gcr.io/library/ubuntu:24.04
+          - distro: debian12
+            image: mirror.gcr.io/library/debian:12
+          - distro: debian13
+            image: mirror.gcr.io/library/debian:13
+          - distro: rockylinux9
+            image: quay.io/rockylinux/rockylinux:9
+          - distro: almalinux9
+            image: mirror.gcr.io/library/almalinux:9
+    env:
+      MOLECULE_IMAGE: ${{ matrix.image }}
+      RESULTS: ${{ github.workspace }}/results
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install tooling
+        run: |
+          python -m pip install -r requirements.txt
+          ansible-galaxy collection install -r requirements.yml
+          mkdir -p "$RESULTS"
+
+      - name: Fetch Lynis (pinned tag, commit verified)
+        run: |
+          git clone --quiet --depth 1 --branch "$LYNIS_VERSION" https://github.com/CISOfy/lynis.git "$RUNNER_TEMP/lynis"
+          actual="$(git -C "$RUNNER_TEMP/lynis" rev-parse HEAD)"
+          if [ "$actual" != "$LYNIS_COMMIT" ]; then
+            echo "Lynis tag $LYNIS_VERSION points to $actual, expected $LYNIS_COMMIT" >&2
+            exit 1
+          fi
+          rm -rf "$RUNNER_TEMP/lynis/.git"
+
+      - name: Create and prepare the instance
+        run: |
+          molecule create
+          molecule prepare
+
+      - name: Benchmark before hardening (Lynis)
+        run: scripts/ci/lynis-scan.sh instance before "$RUNNER_TEMP/lynis" "$RESULTS"
+
+      - name: Converge
+        run: |
+          set -o pipefail
+          molecule converge 2>&1 | tee "$RESULTS/converge.log"
+
+      - name: Idempotence (second run must report 0 changes)
+        run: |
+          set -o pipefail
+          molecule idempotence 2>&1 | tee "$RESULTS/idempotence.log"
+
+      - name: Benchmark after hardening (Lynis)
+        run: scripts/ci/lynis-scan.sh instance after "$RUNNER_TEMP/lynis" "$RESULTS"
+
+      - name: Verify
+        run: |
+          set -o pipefail
+          molecule verify 2>&1 | tee "$RESULTS/verify.log"
+
+      - name: Publish results to the job summary
+        run: python scripts/ci/summarize.py distro "${{ matrix.distro }}" "$RESULTS" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: results-${{ matrix.distro }}
+          path: results/
+          retention-days: 30
+
+      - name: Destroy the instance
+        if: always()
+        run: molecule destroy
+
+  report:
+    name: Fleet report
+    needs: molecule
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download evidence
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: results-*
+          path: results
+
+      - name: Write the fleet table to the job summary
+        run: python3 scripts/ci/summarize.py fleet results | tee -a "$GITHUB_STEP_SUMMARY"

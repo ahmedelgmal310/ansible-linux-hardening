@@ -1,0 +1,6 @@
+---
+firewall_allow:
+  - { port: 22, proto: tcp, src: 10.0.0.0/8, comment: ssh from the management network }
+  - { port: 80, proto: tcp, src: any, comment: http }
+  - { port: 443, proto: tcp, src: any, comment: https }
+  - { port: 9100, proto: tcp, src: 10.0.30.0/24, comment: node_exporter scraped by monitoring }

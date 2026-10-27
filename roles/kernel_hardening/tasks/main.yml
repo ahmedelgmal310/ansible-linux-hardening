@@ -1,0 +1,66 @@
+---
+- name: Check whether the IPv6 stack is present
+  ansible.builtin.stat:
+    path: /proc/sys/net/ipv6
+  register: kernel_hardening_ipv6
+
+- name: Build the effective sysctl set
+  ansible.builtin.set_fact:
+    kernel_hardening_effective_sysctls: >-
+      {{ kernel_hardening_sysctls
+         | combine(kernel_hardening_ipv6_sysctls if kernel_hardening_ipv6.stat.exists else {})
+         | combine(kernel_hardening_extra_sysctls) }}
+
+- name: Apply and persist kernel parameters
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value | string }}"
+    sysctl_file: "{{ kernel_hardening_sysctl_file }}"
+    sysctl_set: "{{ kernel_hardening_apply_live }}"
+    reload: false
+    state: present
+  loop: "{{ kernel_hardening_effective_sysctls | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}={{ item.value }}"
+
+- name: Prevent loading of unused filesystems and protocols
+  ansible.builtin.template:
+    src: modprobe-hardening.conf.j2
+    dest: /etc/modprobe.d/60-hardening.conf
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Disable core dumps through limits.conf
+  when: kernel_hardening_disable_core_dumps
+  ansible.builtin.copy:
+    dest: /etc/security/limits.d/60-no-core-dumps.conf
+    content: |
+      # Managed by Ansible. Local changes will be overwritten.
+      * hard core 0
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Disable core dumps through systemd-coredump
+  when: kernel_hardening_disable_core_dumps
+  block:
+    - name: Create coredump drop-in directory
+      ansible.builtin.file:
+        path: /etc/systemd/coredump.conf.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Write coredump drop-in
+      ansible.builtin.copy:
+        dest: /etc/systemd/coredump.conf.d/60-hardening.conf
+        content: |
+          # Managed by Ansible. Local changes will be overwritten.
+          [Coredump]
+          Storage=none
+          ProcessSizeMax=0
+        owner: root
+        group: root
+        mode: "0644"

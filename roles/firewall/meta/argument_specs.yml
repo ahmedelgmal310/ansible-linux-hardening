@@ -1,0 +1,97 @@
+---
+argument_specs:
+  main:
+    short_description: Default deny inbound firewall with ufw (Debian/Ubuntu) or firewalld (RHEL family)
+    options:
+      firewall_backend:
+        description: Backend. auto selects ufw on Debian/Ubuntu and firewalld on the RHEL family.
+        type: str
+        choices:
+          - auto
+          - ufw
+          - firewalld
+        default: auto
+      firewall_allow:
+        description: 'Allow. Inbound allowlist; everything else is dropped. Each entry: port:    port number or range ("6000:6007" for ufw, "6000-6007"
+          for firewalld) proto:   tcp | udp (default tcp) src:     source CIDR, or "any" (default any) comment: free text (ufw only).'
+        type: list
+        elements: dict
+        options:
+          port:
+            type: raw
+            required: true
+            description: Port number or range.
+          proto:
+            type: str
+            default: tcp
+            choices:
+              - tcp
+              - udp
+            description: Protocol.
+          src:
+            type: str
+            default: any
+            description: Source CIDR or any.
+          comment:
+            type: str
+            description: Rule comment (ufw only).
+        default:
+          - port: 22
+            proto: tcp
+            src: any
+            comment: ssh
+      firewall_ufw_default_incoming:
+        description: Ufw default incoming. ufw (CIS 3.5.1.x).
+        type: str
+        choices:
+          - allow
+          - deny
+          - reject
+        default: deny
+      firewall_ufw_default_outgoing:
+        description: Ufw default outgoing. ufw (CIS 3.5.1.x).
+        type: str
+        choices:
+          - allow
+          - deny
+          - reject
+        default: allow
+      firewall_ufw_default_routed:
+        description: Ufw default routed. ufw (CIS 3.5.1.x).
+        type: str
+        choices:
+          - allow
+          - deny
+          - reject
+        default: deny
+      firewall_ufw_logging:
+        description: Ufw logging. ufw (CIS 3.5.1.x).
+        type: str
+        choices:
+          - 'on'
+          - 'off'
+          - low
+          - medium
+          - high
+          - full
+        default: low
+      firewall_firewalld_zone:
+        description: Firewalld zone. firewalld (CIS 3.5.2.x / 4.2.x on RHEL).
+        type: str
+        default: public
+      firewall_firewalld_target:
+        description: Firewalld target. firewalld (CIS 3.5.2.x / 4.2.x on RHEL).
+        type: str
+        choices:
+          - default
+          - ACCEPT
+          - DROP
+          - '%%REJECT%%'
+        default: DROP
+      firewall_firewalld_remove_services:
+        description: Firewalld remove services. firewalld (CIS 3.5.2.x / 4.2.x on RHEL).
+        type: list
+        elements: str
+        default:
+          - cockpit
+          - dhcpv6-client

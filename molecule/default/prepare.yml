@@ -1,0 +1,35 @@
+---
+- name: Generate a throwaway SSH key pair on the controller
+  hosts: localhost
+  gather_facts: false
+  vars:
+    prepare_key: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/id_ed25519"
+  tasks:
+    - name: Create the test key (never committed, lives in the ephemeral dir)
+      ansible.builtin.command:
+        cmd: "ssh-keygen -q -t ed25519 -N '' -C molecule-test -f {{ prepare_key }}"
+        creates: "{{ prepare_key }}"
+
+# The "before" benchmark runs against this state: the stock image plus a stock
+# OpenSSH server, which is what a freshly provisioned server looks like.
+- name: Bring the instance to a freshly provisioned server state
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Install OpenSSH server with distribution defaults (Debian family)
+      when: ansible_facts['os_family'] == 'Debian'
+      ansible.builtin.apt:
+        name: openssh-server
+        state: present
+        update_cache: true
+
+    - name: Install OpenSSH server with distribution defaults (RHEL family)
+      when: ansible_facts['os_family'] == 'RedHat'
+      ansible.builtin.dnf:
+        name: openssh-server
+        state: present
+
+    - name: Start sshd with the distribution configuration
+      ansible.builtin.systemd_service:
+        name: "{{ 'ssh' if ansible_facts['os_family'] == 'Debian' else 'sshd' }}"
+        state: started

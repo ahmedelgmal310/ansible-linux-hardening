@@ -1,0 +1,42 @@
+---
+argument_specs:
+  main:
+    short_description: Prometheus node_exporter with a sandboxed systemd unit
+    options:
+      node_exporter_version:
+        description: Version.
+        type: str
+        default: 1.12.1
+      node_exporter_checksums:
+        description: Checksums. sha256 of the release tarballs, from the upstream sha256sums.txt.
+        type: dict
+        default:
+          amd64: b51d8a76aa2a9156a55d501aca6276fae09e262259a5e4e831d2c2222f084e63
+          arm64: ad35b605f9954b9f1ffddf5ba054bdc5a98d790b9eae5291e1eeb83f1ecbd0e7
+      node_exporter_download_base:
+        description: Download base. sha256 of the release tarballs, from the upstream sha256sums.txt.
+        type: str
+        default: https://github.com/prometheus/node_exporter/releases/download
+      node_exporter_listen_address:
+        description: 'Listen address. Expose metrics on this address. Allow the port only from the monitoring network through firewall_allow, for example:
+          - { port: 9100, proto: tcp, src: 10.0.0.0/24, comment: node_exporter }.'
+        type: str
+        default: 0.0.0.0:9100
+      node_exporter_install_dir:
+        description: 'Install dir. Expose metrics on this address. Allow the port only from the monitoring network through firewall_allow, for example:
+          - { port: 9100, proto: tcp, src: 10.0.0.0/24, comment: node_exporter }.'
+        type: str
+        default: /opt/node_exporter
+      node_exporter_user:
+        description: 'User. Expose metrics on this address. Allow the port only from the monitoring network through firewall_allow, for example: - { port:
+          9100, proto: tcp, src: 10.0.0.0/24, comment: node_exporter }.'
+        type: str
+        default: node_exporter
+      node_exporter_extra_args:
+        description: 'Extra args. Expose metrics on this address. Allow the port only from the monitoring network through firewall_allow, for example: -
+          { port: 9100, proto: tcp, src: 10.0.0.0/24, comment: node_exporter }.'
+        type: list
+        elements: str
+        default:
+          - --collector.systemd
+          - --no-collector.wifi

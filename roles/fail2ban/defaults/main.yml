@@ -1,0 +1,21 @@
+---
+fail2ban_bantime: 1h
+fail2ban_findtime: 10m
+fail2ban_maxretry: 5
+# Repeat offenders are banned for progressively longer periods.
+fail2ban_bantime_increment: true
+fail2ban_bantime_maxtime: 1w
+fail2ban_ignoreip:
+  - 127.0.0.1/8
+  - ::1
+
+# auto picks the action matching the firewall role: ufw on Debian/Ubuntu,
+# firewalld rich rules on the RHEL family.
+fail2ban_banaction: auto
+
+fail2ban_sshd_enabled: true
+fail2ban_sshd_port: ssh
+fail2ban_sshd_mode: aggressive
+
+# Extra jails: name -> dict of jail options.
+fail2ban_extra_jails: {}

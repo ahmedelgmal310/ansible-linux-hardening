@@ -1,0 +1,72 @@
+# Managed by Ansible. Local changes will be overwritten.
+# Drop-in files in /etc/ssh/sshd_config.d are intentionally not included so
+# that cloud-init or vendor defaults cannot re-enable weaker settings.
+
+Port {{ ssh_hardening_port }}
+{% for address in ssh_hardening_listen_addresses %}
+ListenAddress {{ address }}
+{% endfor %}
+AddressFamily any
+
+{% for type in ssh_hardening_host_key_types %}
+HostKey /etc/ssh/ssh_host_{{ type }}_key
+{% endfor %}
+
+# Cryptography
+Ciphers {{ ssh_hardening_effective_ciphers | join(',') }}
+MACs {{ ssh_hardening_effective_macs | join(',') }}
+KexAlgorithms {{ ssh_hardening_effective_kex | join(',') }}
+RekeyLimit 512M 1h
+
+# Logging
+SyslogFacility AUTH
+LogLevel {{ ssh_hardening_log_level }}
+
+# Authentication
+LoginGraceTime {{ ssh_hardening_login_grace_time }}
+PermitRootLogin {{ ssh_hardening_permit_root_login }}
+StrictModes yes
+MaxAuthTries {{ ssh_hardening_max_auth_tries }}
+MaxSessions {{ ssh_hardening_max_sessions }}
+MaxStartups {{ ssh_hardening_max_startups }}
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+PasswordAuthentication {{ 'yes' if ssh_hardening_password_authentication else 'no' }}
+PermitEmptyPasswords no
+KbdInteractiveAuthentication {{ 'yes' if ssh_hardening_kbd_interactive_authentication else 'no' }}
+HostbasedAuthentication no
+IgnoreRhosts yes
+GSSAPIAuthentication no
+UsePAM yes
+PermitUserEnvironment no
+{% if ssh_hardening_allow_groups | length > 0 %}
+AllowGroups {{ ssh_hardening_allow_groups | join(' ') }}
+{% endif %}
+{% if ssh_hardening_allow_users | length > 0 %}
+AllowUsers {{ ssh_hardening_allow_users | join(' ') }}
+{% endif %}
+
+# Session
+ClientAliveInterval {{ ssh_hardening_client_alive_interval }}
+ClientAliveCountMax {{ ssh_hardening_client_alive_count_max }}
+TCPKeepAlive no
+Compression no
+UseDNS no
+PrintMotd no
+PrintLastLog yes
+X11Forwarding {{ 'yes' if ssh_hardening_x11_forwarding else 'no' }}
+AllowTcpForwarding {{ 'yes' if ssh_hardening_allow_tcp_forwarding else 'no' }}
+AllowAgentForwarding {{ 'yes' if ssh_hardening_allow_agent_forwarding else 'no' }}
+AllowStreamLocalForwarding no
+GatewayPorts no
+PermitTunnel no
+{% if ssh_hardening_banner_enabled %}
+Banner /etc/issue.net
+{% else %}
+Banner none
+{% endif %}
+
+AcceptEnv LANG LC_*
+{% if ssh_hardening_sftp_enabled %}
+Subsystem sftp internal-sftp
+{% endif %}

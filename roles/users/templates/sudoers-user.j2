@@ -1,0 +1,2 @@
+# Managed by Ansible. Local changes will be overwritten.
+{{ item.name }} ALL=(ALL:ALL) {{ 'NOPASSWD: ' if item.sudo_nopasswd | default(false) else '' }}ALL

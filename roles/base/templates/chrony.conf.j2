@@ -1,0 +1,13 @@
+# Managed by Ansible. Local changes will be overwritten.
+{% for pool in base_chrony_pools %}
+pool {{ pool }} iburst maxsources 4
+{% endfor %}
+
+driftfile {{ base_os_chrony_driftfile }}
+makestep {{ base_chrony_makestep }}
+rtcsync
+logdir /var/log/chrony
+
+# Client only: do not serve time to the network (CIS 2.1.2).
+port 0
+cmdport 0

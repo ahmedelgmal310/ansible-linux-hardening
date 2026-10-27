@@ -1,0 +1,5 @@
+---
+ssh_hardening_os_service: sshd
+ssh_hardening_os_packages:
+  - openssh-server
+  - openssh-clients

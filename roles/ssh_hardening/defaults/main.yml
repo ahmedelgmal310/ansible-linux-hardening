@@ -1,0 +1,63 @@
+---
+ssh_hardening_port: 22
+ssh_hardening_listen_addresses: []
+
+# CIS 5.1.4: restrict who may log in. Empty lists disable the directive.
+ssh_hardening_allow_groups:
+  - sshusers
+ssh_hardening_allow_users: []
+
+# CIS 5.1.20 / 5.1.19 / 5.1.9.
+ssh_hardening_permit_root_login: "no"
+ssh_hardening_password_authentication: false
+ssh_hardening_kbd_interactive_authentication: false
+
+# CIS 5.1.7 / 5.1.10 / 5.1.13-16 / 5.1.21.
+ssh_hardening_client_alive_interval: 300
+ssh_hardening_client_alive_count_max: 2
+ssh_hardening_login_grace_time: 60
+ssh_hardening_max_auth_tries: 3
+ssh_hardening_max_sessions: 4
+ssh_hardening_max_startups: "10:30:60"
+ssh_hardening_log_level: VERBOSE
+
+ssh_hardening_x11_forwarding: false
+ssh_hardening_allow_tcp_forwarding: false
+ssh_hardening_allow_agent_forwarding: false
+ssh_hardening_sftp_enabled: true
+
+# CIS 5.1.5: warning banner.
+ssh_hardening_banner_enabled: true
+ssh_hardening_banner_text: |
+  Authorized access only. Connections are logged and monitored.
+  Disconnect immediately if you are not an authorized user.
+
+# CIS 5.1.6 / 5.1.12 / 5.1.15: strong algorithms only. Entries the installed
+# OpenSSH does not support are dropped automatically (checked with `ssh -Q`).
+ssh_hardening_ciphers:
+  - chacha20-poly1305@openssh.com
+  - aes256-gcm@openssh.com
+  - aes128-gcm@openssh.com
+  - aes256-ctr
+  - aes192-ctr
+  - aes128-ctr
+ssh_hardening_macs:
+  - hmac-sha2-512-etm@openssh.com
+  - hmac-sha2-256-etm@openssh.com
+  - umac-128-etm@openssh.com
+ssh_hardening_kex:
+  - mlkem768x25519-sha256
+  - sntrup761x25519-sha512
+  - sntrup761x25519-sha512@openssh.com
+  - curve25519-sha256
+  - curve25519-sha256@libssh.org
+  - diffie-hellman-group18-sha512
+  - diffie-hellman-group16-sha512
+  - diffie-hellman-group-exchange-sha256
+ssh_hardening_host_key_types:
+  - ed25519
+  - rsa
+
+# On Debian/Ubuntu, run sshd as a normal service instead of socket activation so
+# that Port/ListenAddress in sshd_config are always honoured.
+ssh_hardening_disable_socket_activation: true

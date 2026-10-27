@@ -1,0 +1,101 @@
+---
+argument_specs:
+  main:
+    short_description: Administrative users, SSH keys, sudo policy, root lock and password policy
+    options:
+      users_ssh_group:
+        description: Ssh group. Group that is allowed to log in over SSH (consumed by ssh_hardening AllowGroups).
+        type: str
+        default: sshusers
+      users_admins:
+        description: Administrative accounts to manage; see the element options.
+        type: list
+        elements: dict
+        options:
+          name:
+            type: str
+            required: true
+            description: Login name.
+          comment:
+            type: str
+            description: GECOS comment.
+          shell:
+            type: str
+            default: /bin/bash
+            description: Login shell.
+          groups:
+            type: list
+            elements: str
+            default: []
+            description: Extra supplementary groups.
+          ssh_keys:
+            type: list
+            elements: str
+            default: []
+            description: Public keys for authorized_keys.
+          ssh_access:
+            type: bool
+            default: true
+            description: Add the user to users_ssh_group.
+          sudo:
+            type: bool
+            default: true
+            description: Grant sudo through /etc/sudoers.d.
+          sudo_nopasswd:
+            type: bool
+            default: false
+            description: Allow sudo without a password.
+          state:
+            type: str
+            default: present
+            choices:
+              - present
+              - absent
+            description: Account state.
+        default: []
+      users_remove:
+        description: Remove. Accounts that must not exist on any host.
+        type: list
+        elements: str
+        default: []
+      users_exclusive_keys:
+        description: Exclusive keys.
+        type: bool
+        default: true
+      users_lock_root:
+        description: 'Lock root. CIS 5.4.2.x: lock the root password; access goes through named sudo users.'
+        type: bool
+        default: true
+      users_sudo_logfile:
+        description: 'Sudo logfile. CIS 5.2.x: sudo hardening.'
+        type: str
+        default: /var/log/sudo.log
+      users_sudo_timestamp_timeout:
+        description: 'Sudo timestamp timeout. CIS 5.2.x: sudo hardening.'
+        type: int
+        default: 15
+      users_pass_max_days:
+        description: 'Pass max days. CIS 5.4.1.x / 5.3.3.x: password policy for local passwords.'
+        type: int
+        default: 365
+      users_pass_min_days:
+        description: 'Pass min days. CIS 5.4.1.x / 5.3.3.x: password policy for local passwords.'
+        type: int
+        default: 1
+      users_pass_warn_age:
+        description: 'Pass warn age. CIS 5.4.1.x / 5.3.3.x: password policy for local passwords.'
+        type: int
+        default: 7
+      users_login_umask:
+        description: 'Login umask. CIS 5.4.1.x / 5.3.3.x: password policy for local passwords.'
+        type: str
+        default: '027'
+      users_pwquality:
+        description: 'Pwquality. CIS 5.4.1.x / 5.3.3.x: password policy for local passwords.'
+        type: dict
+        default:
+          minlen: 14
+          minclass: 4
+          maxrepeat: 3
+          dictcheck: 1
+          enforce_for_root: true

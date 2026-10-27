@@ -1,0 +1,25 @@
+# Test image: the stock distribution image plus systemd and Python so that
+# Ansible can manage it like a VM. Nothing security related is preinstalled.
+FROM {{ item.image }}
+
+ENV container=docker
+
+{% if 'ubuntu' in item.image or 'debian' in item.image %}
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends systemd systemd-sysv dbus python3 python3-apt sudo ca-certificates iproute2 procps \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+{% else %}
+RUN dnf -y install systemd dbus python3 sudo procps-ng iproute \
+ && dnf clean all
+{% endif %}
+
+# Units that make no sense inside a container.
+RUN rm -f /usr/lib/systemd/system/multi-user.target.wants/getty.target \
+          /etc/systemd/system/getty.target.wants/* \
+          /usr/lib/systemd/system/sysinit.target.wants/systemd-firstboot.service \
+ && systemctl mask systemd-remount-fs.service dev-hugepages.mount sys-fs-fuse-connections.mount getty.target console-getty.service
+
+STOPSIGNAL SIGRTMIN+3
+CMD ["/usr/lib/systemd/systemd"]

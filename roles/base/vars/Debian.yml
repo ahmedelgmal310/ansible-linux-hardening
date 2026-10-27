@@ -1,0 +1,12 @@
+---
+base_os_packages:
+  - unattended-upgrades
+base_os_remove_packages:
+  - telnet
+  - rsh-client
+  - talk
+  - nis
+  - ftp
+base_os_chrony_conf: /etc/chrony/chrony.conf
+base_os_chrony_driftfile: /var/lib/chrony/chrony.drift
+base_os_chrony_service: chrony

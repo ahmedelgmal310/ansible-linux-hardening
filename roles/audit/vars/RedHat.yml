@@ -1,0 +1,9 @@
+---
+audit_os_packages:
+  - audit
+audit_os_mac_paths:
+  - /etc/selinux/
+  - /usr/share/selinux/
+audit_os_network_paths:
+  - /etc/sysconfig/network
+  - /etc/NetworkManager/

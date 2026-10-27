@@ -1,0 +1,8 @@
+# Managed by Ansible. Local changes will be overwritten.
+{% for key, value in users_pwquality.items() %}
+{% if value is sameas true %}
+{{ key }}
+{% elif value is not sameas false %}
+{{ key }} = {{ value }}
+{% endif %}
+{% endfor %}

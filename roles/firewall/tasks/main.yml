@@ -1,0 +1,14 @@
+---
+- name: Select firewall backend
+  ansible.builtin.set_fact:
+    firewall_effective_backend: >-
+      {{ firewall_backend if firewall_backend != 'auto'
+         else ('ufw' if ansible_facts['os_family'] == 'Debian' else 'firewalld') }}
+
+- name: Configure ufw
+  when: firewall_effective_backend == 'ufw'
+  ansible.builtin.import_tasks: ufw.yml
+
+- name: Configure firewalld
+  when: firewall_effective_backend == 'firewalld'
+  ansible.builtin.import_tasks: firewalld.yml

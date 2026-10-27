@@ -1,0 +1,94 @@
+---
+- name: Load distribution specific variables
+  ansible.builtin.include_vars: "{{ ansible_facts['os_family'] }}.yml"
+
+- name: Install OpenSSH
+  ansible.builtin.package:
+    name: "{{ ssh_hardening_os_packages }}"
+    state: present
+
+- name: Generate missing host keys
+  ansible.builtin.command: ssh-keygen -A
+  args:
+    creates: /etc/ssh/ssh_host_ed25519_key
+
+- name: Ensure the privilege separation directory exists
+  ansible.builtin.file:
+    path: /run/sshd
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Query algorithms supported by the installed OpenSSH
+  ansible.builtin.command: "ssh -Q {{ item }}"
+  loop:
+    - cipher
+    - mac
+    - kex
+  register: ssh_hardening_supported
+  changed_when: false
+  check_mode: false
+
+- name: Keep only supported algorithms
+  ansible.builtin.set_fact:
+    ssh_hardening_effective_ciphers: "{{ ssh_hardening_ciphers | intersect(ssh_hardening_supported.results[0].stdout_lines) }}"
+    ssh_hardening_effective_macs: "{{ ssh_hardening_macs | intersect(ssh_hardening_supported.results[1].stdout_lines) }}"
+    ssh_hardening_effective_kex: "{{ ssh_hardening_kex | intersect(ssh_hardening_supported.results[2].stdout_lines) }}"
+
+- name: Fail when no strong algorithm is available
+  ansible.builtin.assert:
+    that:
+      - ssh_hardening_effective_ciphers | length > 0
+      - ssh_hardening_effective_macs | length > 0
+      - ssh_hardening_effective_kex | length > 0
+    fail_msg: The installed OpenSSH supports none of the configured algorithms.
+    quiet: true
+
+- name: Write SSH warning banner
+  when: ssh_hardening_banner_enabled
+  ansible.builtin.copy:
+    dest: /etc/issue.net
+    content: "{{ ssh_hardening_banner_text }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Deploy hardened sshd_config
+  ansible.builtin.template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: "0600"
+    validate: /usr/sbin/sshd -t -f %s
+  notify: Restart sshd
+
+- name: Restrict host private key permissions
+  ansible.builtin.file:
+    path: "/etc/ssh/ssh_host_{{ item }}_key"
+    owner: root
+    mode: "0600"
+  loop: "{{ ssh_hardening_host_key_types }}"
+
+- name: Check for an ssh.socket unit
+  when: ansible_facts['os_family'] == 'Debian'
+  ansible.builtin.stat:
+    path: /usr/lib/systemd/system/ssh.socket
+  register: ssh_hardening_socket_unit
+
+- name: Disable socket activation in favour of ssh.service
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - ssh_hardening_disable_socket_activation
+    - ssh_hardening_socket_unit.stat.exists
+  ansible.builtin.systemd_service:
+    name: ssh.socket
+    enabled: false
+    state: stopped
+
+- name: Enable and start sshd
+  ansible.builtin.systemd_service:
+    name: "{{ ssh_hardening_os_service }}"
+    enabled: true
+    state: started

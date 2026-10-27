@@ -1,0 +1,23 @@
+# Managed by Ansible. Local changes will be overwritten.
+[DEFAULT]
+bantime = {{ fail2ban_bantime }}
+findtime = {{ fail2ban_findtime }}
+maxretry = {{ fail2ban_maxretry }}
+bantime.increment = {{ 'true' if fail2ban_bantime_increment else 'false' }}
+bantime.maxtime = {{ fail2ban_bantime_maxtime }}
+ignoreip = {{ fail2ban_ignoreip | join(' ') }}
+backend = systemd
+banaction = {{ fail2ban_os_banaction if fail2ban_banaction == 'auto' else fail2ban_banaction }}
+
+[sshd]
+enabled = {{ 'true' if fail2ban_sshd_enabled else 'false' }}
+port = {{ fail2ban_sshd_port }}
+mode = {{ fail2ban_sshd_mode }}
+backend = systemd
+{% for name, options in fail2ban_extra_jails.items() %}
+
+[{{ name }}]
+{% for key, value in options.items() %}
+{{ key }} = {{ value }}
+{% endfor %}
+{% endfor %}

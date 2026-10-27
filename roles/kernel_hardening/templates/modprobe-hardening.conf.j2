@@ -1,0 +1,5 @@
+# Managed by Ansible. Local changes will be overwritten.
+{% for module in kernel_hardening_disabled_filesystems + kernel_hardening_disabled_modules %}
+install {{ module }} /bin/false
+blacklist {{ module }}
+{% endfor %}

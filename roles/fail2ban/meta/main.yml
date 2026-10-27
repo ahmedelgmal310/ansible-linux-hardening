@@ -1,0 +1,23 @@
+---
+galaxy_info:
+  author: Ahmed Elgamal
+  description: fail2ban with a systemd backed sshd jail
+  license: MIT
+  min_ansible_version: '2.17'
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+    - name: EL
+      versions:
+        - '9'
+  galaxy_tags:
+    - security
+    - hardening
+    - cis
+    - fail2ban
+dependencies: []

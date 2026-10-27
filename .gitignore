@@ -1,0 +1,14 @@
+.cache/
+.venv/
+venv/
+__pycache__/
+*.retry
+*.log
+results/
+.omc/
+.impeccable/
+# Never commit key material
+id_rsa*
+id_ed25519*
+*.pem
+*.key

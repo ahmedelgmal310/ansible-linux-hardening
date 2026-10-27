@@ -1,0 +1,11 @@
+---
+- name: Compile audit rules
+  ansible.builtin.command: "augenrules{{ ' --load' if audit_service_active | bool else '' }}"
+  changed_when: true
+
+# auditd refuses `systemctl restart` on the RHEL family (RefuseManualStop),
+# so the SysV compatible wrapper is used there.
+- name: Restart auditd
+  when: audit_service_active | bool
+  ansible.builtin.command: "{{ 'service auditd restart' if ansible_facts['os_family'] == 'RedHat' else 'systemctl restart auditd' }}"
+  changed_when: true

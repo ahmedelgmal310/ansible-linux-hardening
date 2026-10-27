@@ -1,0 +1,60 @@
+---
+- name: Load distribution specific variables
+  ansible.builtin.include_vars: "{{ ansible_facts['os_family'] }}.yml"
+
+- name: Install sudo and password quality tooling
+  ansible.builtin.package:
+    name: "{{ users_os_packages }}"
+    state: present
+
+- name: Create SSH access group
+  ansible.builtin.group:
+    name: "{{ users_ssh_group }}"
+    state: present
+    system: true
+
+- name: Manage administrative accounts
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    comment: "{{ item.comment | default(omit) }}"
+    shell: "{{ item.shell | default('/bin/bash') }}"
+    groups: "{{ (item.groups | default([])) + ([users_ssh_group] if item.ssh_access | default(true) else []) }}"
+    append: true
+    create_home: true
+    state: "{{ item.state | default('present') }}"
+    remove: "{{ (item.state | default('present')) == 'absent' }}"
+  loop: "{{ users_admins }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Manage authorized SSH keys
+  ansible.posix.authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ item.ssh_keys | join('\n') }}"
+    exclusive: "{{ users_exclusive_keys }}"
+    state: present
+  loop: "{{ users_admins }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when:
+    - item.ssh_keys | default([]) | length > 0
+    - item.state | default('present') == 'present'
+
+- name: Configure sudo
+  ansible.builtin.import_tasks: sudo.yml
+
+- name: Remove unwanted accounts
+  ansible.builtin.user:
+    name: "{{ item }}"
+    state: absent
+    remove: true
+  loop: "{{ users_remove }}"
+
+- name: Lock the root password
+  when: users_lock_root
+  ansible.builtin.user:
+    name: root
+    password_lock: true
+
+- name: Configure password policy
+  ansible.builtin.import_tasks: password_policy.yml

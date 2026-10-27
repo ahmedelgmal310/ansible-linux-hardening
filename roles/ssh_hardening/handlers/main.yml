@@ -1,0 +1,13 @@
+---
+# Handlers run in the order they are defined: the live configuration is
+# validated with `sshd -t` first, and sshd is restarted only if that passes.
+- name: Validate sshd configuration
+  ansible.builtin.command: /usr/sbin/sshd -t
+  changed_when: false
+  listen: Restart sshd
+
+- name: Restart sshd service
+  ansible.builtin.systemd_service:
+    name: "{{ ssh_hardening_os_service }}"
+    state: restarted
+  listen: Restart sshd

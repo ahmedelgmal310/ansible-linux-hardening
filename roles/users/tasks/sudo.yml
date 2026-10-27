@@ -1,0 +1,33 @@
+---
+- name: Deploy sudo defaults (use_pty, logfile, timeout)
+  ansible.builtin.template:
+    src: sudoers-defaults.j2
+    dest: /etc/sudoers.d/00-hardening
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+
+- name: Grant sudo to administrators
+  ansible.builtin.template:
+    src: sudoers-user.j2
+    dest: "/etc/sudoers.d/90-{{ item.name }}"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+  loop: "{{ users_admins }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when:
+    - item.sudo | default(true)
+    - item.state | default('present') == 'present'
+
+- name: Revoke sudo where it is not granted
+  ansible.builtin.file:
+    path: "/etc/sudoers.d/90-{{ item.name }}"
+    state: absent
+  loop: "{{ users_admins }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: not (item.sudo | default(true)) or item.state | default('present') == 'absent'

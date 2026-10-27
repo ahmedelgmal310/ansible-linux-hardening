@@ -1,0 +1,57 @@
+---
+argument_specs:
+  main:
+    short_description: fail2ban with a systemd backed sshd jail
+    options:
+      fail2ban_bantime:
+        description: Bantime.
+        type: str
+        default: 1h
+      fail2ban_findtime:
+        description: Findtime.
+        type: str
+        default: 10m
+      fail2ban_maxretry:
+        description: Maxretry.
+        type: int
+        default: 5
+      fail2ban_bantime_increment:
+        description: Bantime increment. Repeat offenders are banned for progressively longer periods.
+        type: bool
+        default: true
+      fail2ban_bantime_maxtime:
+        description: Bantime maxtime. Repeat offenders are banned for progressively longer periods.
+        type: str
+        default: 1w
+      fail2ban_ignoreip:
+        description: Ignoreip. Repeat offenders are banned for progressively longer periods.
+        type: list
+        elements: str
+        default:
+          - 127.0.0.1/8
+          - ::1
+      fail2ban_banaction:
+        description: 'Banaction. auto picks the action matching the firewall role: ufw on Debian/Ubuntu, firewalld rich rules on the RHEL family.'
+        type: str
+        default: auto
+      fail2ban_sshd_enabled:
+        description: Sshd enabled.
+        type: bool
+        default: true
+      fail2ban_sshd_port:
+        description: Sshd port.
+        type: str
+        default: ssh
+      fail2ban_sshd_mode:
+        description: Sshd mode.
+        type: str
+        choices:
+          - normal
+          - ddos
+          - extra
+          - aggressive
+        default: aggressive
+      fail2ban_extra_jails:
+        description: 'Extra jails. Extra jails: name -> dict of jail options.'
+        type: dict
+        default: {}

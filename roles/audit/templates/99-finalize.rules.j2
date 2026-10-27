@@ -1,0 +1,7 @@
+## Managed by Ansible. Local changes will be overwritten.
+{% if audit_rules_immutable %}
+## 6.2.3.20 Make the audit configuration immutable until the next reboot
+-e 2
+{% else %}
+## Immutable mode disabled by audit_rules_immutable=false
+{% endif %}

@@ -1,0 +1,32 @@
+---
+# Start auditd and load rules into the kernel. Containers share the host
+# kernel's audit subsystem, which only accepts rules from the initial PID
+# namespace, so inside a container the rules are compiled but not loaded.
+audit_manage_service: true
+audit_skip_service_in_containers: true
+
+# CIS 6.2.2.x: audit log storage.
+audit_max_log_file: 8
+audit_max_log_file_action: keep_logs
+audit_num_logs: 5
+audit_space_left_action: email
+audit_action_mail_acct: root
+audit_admin_space_left_action: single
+audit_disk_full_action: halt
+audit_disk_error_action: halt
+
+# CIS 6.2.1.4: backlog for events raised before auditd starts.
+audit_backlog_limit: 8192
+
+# CIS 6.2.3.20: make the configuration immutable (-e 2). Changing rules then
+# requires a reboot.
+audit_rules_immutable: true
+
+# UID_MIN for "real users" in rules.
+audit_uid_min: 1000
+
+# Must match users_sudo_logfile when the users role is used.
+audit_sudo_logfile: /var/log/sudo.log
+
+# Extra rules appended after the CIS set, one rule per list item.
+audit_extra_rules: []

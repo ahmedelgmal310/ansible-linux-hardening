@@ -1,0 +1,24 @@
+---
+# auto selects ufw on Debian/Ubuntu and firewalld on the RHEL family.
+firewall_backend: auto
+
+# Inbound allowlist; everything else is dropped. Each entry:
+#   port:    port number or range ("6000:6007" for ufw, "6000-6007" for firewalld)
+#   proto:   tcp | udp (default tcp)
+#   src:     source CIDR, or "any" (default any)
+#   comment: free text (ufw only)
+firewall_allow:
+  - { port: 22, proto: tcp, src: any, comment: ssh }
+
+# ufw (CIS 3.5.1.x)
+firewall_ufw_default_incoming: deny
+firewall_ufw_default_outgoing: allow
+firewall_ufw_default_routed: deny
+firewall_ufw_logging: low
+
+# firewalld (CIS 3.5.2.x / 4.2.x on RHEL)
+firewall_firewalld_zone: public
+firewall_firewalld_target: DROP
+firewall_firewalld_remove_services:
+  - cockpit
+  - dhcpv6-client

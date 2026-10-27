@@ -1,0 +1,4 @@
+---
+users_os_packages:
+  - sudo
+  - libpam-pwquality

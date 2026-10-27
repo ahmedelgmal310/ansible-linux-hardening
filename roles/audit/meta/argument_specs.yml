@@ -1,0 +1,68 @@
+---
+argument_specs:
+  main:
+    short_description: auditd with the CIS rule set
+    options:
+      audit_manage_service:
+        description: Manage service. Start auditd and load rules into the kernel. Containers share the host kernel's audit subsystem, which only accepts
+          rules from the initial PID namespace, so inside a container the rules are compiled but not loaded.
+        type: bool
+        default: true
+      audit_skip_service_in_containers:
+        description: Skip service in containers. Start auditd and load rules into the kernel. Containers share the host kernel's audit subsystem, which
+          only accepts rules from the initial PID namespace, so inside a container the rules are compiled but not loaded.
+        type: bool
+        default: true
+      audit_max_log_file:
+        description: 'Max log file. CIS 6.2.2.x: audit log storage.'
+        type: int
+        default: 8
+      audit_max_log_file_action:
+        description: 'Max log file action. CIS 6.2.2.x: audit log storage.'
+        type: str
+        default: keep_logs
+      audit_num_logs:
+        description: 'Num logs. CIS 6.2.2.x: audit log storage.'
+        type: int
+        default: 5
+      audit_space_left_action:
+        description: 'Space left action. CIS 6.2.2.x: audit log storage.'
+        type: str
+        default: email
+      audit_action_mail_acct:
+        description: 'Action mail acct. CIS 6.2.2.x: audit log storage.'
+        type: str
+        default: root
+      audit_admin_space_left_action:
+        description: 'Admin space left action. CIS 6.2.2.x: audit log storage.'
+        type: str
+        default: single
+      audit_disk_full_action:
+        description: 'Disk full action. CIS 6.2.2.x: audit log storage.'
+        type: str
+        default: halt
+      audit_disk_error_action:
+        description: 'Disk error action. CIS 6.2.2.x: audit log storage.'
+        type: str
+        default: halt
+      audit_backlog_limit:
+        description: 'Backlog limit. CIS 6.2.1.4: backlog for events raised before auditd starts.'
+        type: int
+        default: 8192
+      audit_rules_immutable:
+        description: 'Rules immutable. CIS 6.2.3.20: make the configuration immutable (-e 2). Changing rules then requires a reboot.'
+        type: bool
+        default: true
+      audit_uid_min:
+        description: Uid min. UID_MIN for "real users" in rules.
+        type: int
+        default: 1000
+      audit_sudo_logfile:
+        description: Sudo logfile. Must match users_sudo_logfile when the users role is used.
+        type: str
+        default: /var/log/sudo.log
+      audit_extra_rules:
+        description: Extra rules. Extra rules appended after the CIS set, one rule per list item.
+        type: list
+        elements: str
+        default: []

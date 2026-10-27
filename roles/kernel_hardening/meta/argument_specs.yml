@@ -1,0 +1,86 @@
+---
+argument_specs:
+  main:
+    short_description: CIS sysctl settings and blacklisting of unused kernel modules
+    options:
+      kernel_hardening_sysctl_file:
+        description: Sysctl file.
+        type: str
+        default: /etc/sysctl.d/60-hardening.conf
+      kernel_hardening_apply_live:
+        description: Apply live. Apply values to the running kernel as well as persisting them.
+        type: bool
+        default: true
+      kernel_hardening_sysctls:
+        description: Sysctls. CIS 3.3.x (network) and 1.5.x (process hardening).
+        type: dict
+        default:
+          net.ipv4.ip_forward: 0
+          net.ipv4.conf.all.send_redirects: 0
+          net.ipv4.conf.default.send_redirects: 0
+          net.ipv4.conf.all.accept_redirects: 0
+          net.ipv4.conf.default.accept_redirects: 0
+          net.ipv4.conf.all.secure_redirects: 0
+          net.ipv4.conf.default.secure_redirects: 0
+          net.ipv4.icmp_ignore_bogus_error_responses: 1
+          net.ipv4.icmp_echo_ignore_broadcasts: 1
+          net.ipv4.conf.all.rp_filter: 1
+          net.ipv4.conf.default.rp_filter: 1
+          net.ipv4.conf.all.accept_source_route: 0
+          net.ipv4.conf.default.accept_source_route: 0
+          net.ipv4.conf.all.log_martians: 1
+          net.ipv4.conf.default.log_martians: 1
+          net.ipv4.tcp_syncookies: 1
+          kernel.randomize_va_space: 2
+          kernel.yama.ptrace_scope: 1
+          fs.suid_dumpable: 0
+          kernel.dmesg_restrict: 1
+          kernel.kptr_restrict: 2
+          kernel.sysrq: 0
+          kernel.unprivileged_bpf_disabled: 1
+          dev.tty.ldisc_autoload: 0
+          fs.protected_hardlinks: 1
+          fs.protected_symlinks: 1
+          fs.protected_fifos: 2
+          fs.protected_regular: 2
+      kernel_hardening_ipv6_sysctls:
+        description: Ipv6 sysctls. CIS 3.3.x IPv6 equivalents, applied only when the IPv6 stack is present.
+        type: dict
+        default:
+          net.ipv6.conf.all.forwarding: 0
+          net.ipv6.conf.all.accept_redirects: 0
+          net.ipv6.conf.default.accept_redirects: 0
+          net.ipv6.conf.all.accept_source_route: 0
+          net.ipv6.conf.default.accept_source_route: 0
+          net.ipv6.conf.all.accept_ra: 0
+          net.ipv6.conf.default.accept_ra: 0
+      kernel_hardening_extra_sysctls:
+        description: Extra sysctls.
+        type: dict
+        default: {}
+      kernel_hardening_disabled_filesystems:
+        description: 'Disabled filesystems. CIS 1.1.1.x: filesystems that servers do not need.'
+        type: list
+        elements: str
+        default:
+          - cramfs
+          - freevxfs
+          - hfs
+          - hfsplus
+          - jffs2
+          - udf
+      kernel_hardening_disabled_modules:
+        description: 'Disabled modules. CIS 3.2.x and 1.1.1.10: uncommon network protocols and USB storage.'
+        type: list
+        elements: str
+        default:
+          - dccp
+          - sctp
+          - rds
+          - tipc
+          - usb-storage
+          - firewire-core
+      kernel_hardening_disable_core_dumps:
+        description: 'Disable core dumps. CIS 1.5.x: disable core dumps for all users.'
+        type: bool
+        default: true

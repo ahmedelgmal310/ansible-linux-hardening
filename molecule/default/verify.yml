@@ -1,0 +1,278 @@
+---
+# Assert the hardened state from the outside: effective sshd config, live
+# kernel parameters, firewall policy, audit rules, services and real SSH logins.
+- name: Verify the hardened state
+  hosts: all
+  gather_facts: true
+  vars:
+    verify_roles: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}/roles"
+    verify_ssh_opts: >-
+      -i {{ molecule_test_key }} -o BatchMode=yes -o ConnectTimeout=10
+      -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+    verify_ip: "{{ ansible_facts['default_ipv4']['address'] }}"
+  tasks:
+    - name: Load role defaults as the expected values
+      ansible.builtin.include_vars:
+        file: "{{ verify_roles }}/{{ item }}/defaults/main.yml"
+      loop:
+        - kernel_hardening
+        - ssh_hardening
+        - audit
+
+    # ---------------------------------------------------------------- sshd
+    - name: Read the effective sshd configuration
+      ansible.builtin.command: /usr/sbin/sshd -T
+      register: verify_sshd
+      changed_when: false
+
+    - name: Assert sshd settings (CIS 5.1.x)
+      vars:
+        verify_cfg: "{{ dict(verify_sshd.stdout_lines | map('regex_findall', '^([a-z0-9]+) (.*)$') | select | map('first') | list) }}"
+      ansible.builtin.assert:
+        that:
+          - verify_cfg['permitrootlogin'] == 'no'
+          - verify_cfg['passwordauthentication'] == 'no'
+          - verify_cfg['kbdinteractiveauthentication'] == 'no'
+          - verify_cfg['permitemptypasswords'] == 'no'
+          - verify_cfg['hostbasedauthentication'] == 'no'
+          - verify_cfg['ignorerhosts'] == 'yes'
+          - verify_cfg['x11forwarding'] == 'no'
+          - verify_cfg['allowtcpforwarding'] == 'no'
+          - verify_cfg['allowagentforwarding'] == 'no'
+          - verify_cfg['permituserenvironment'] == 'no'
+          - verify_cfg['maxauthtries'] | int == ssh_hardening_max_auth_tries
+          - verify_cfg['logingracetime'] | int == ssh_hardening_login_grace_time
+          - verify_cfg['clientaliveinterval'] | int == ssh_hardening_client_alive_interval
+          - verify_cfg['clientalivecountmax'] | int == ssh_hardening_client_alive_count_max
+          - verify_cfg['loglevel'] == 'VERBOSE'
+          - verify_cfg['allowgroups'] == 'sshusers'
+          - verify_cfg['banner'] == '/etc/issue.net'
+          - verify_cfg['usepam'] == 'yes'
+          - "'cbc' not in verify_cfg['ciphers']"
+          - verify_cfg['macs'].split(',') | reject('search', '-etm@openssh.com$') | list | length == 0
+          - "'diffie-hellman-group1-sha1' not in verify_cfg['kexalgorithms']"
+          - "'diffie-hellman-group14-sha1' not in verify_cfg['kexalgorithms']"
+        quiet: true
+
+    - name: Assert sshd_config permissions (CIS 5.1.1)
+      ansible.builtin.stat:
+        path: /etc/ssh/sshd_config
+      register: verify_sshd_config
+      failed_when: verify_sshd_config.stat.mode != '0600' or verify_sshd_config.stat.pw_name != 'root'
+
+    # ------------------------------------------------------- real SSH logins
+    - name: Key login works for a member of the SSH group
+      delegate_to: localhost
+      ansible.builtin.command: "ssh {{ verify_ssh_opts }} opsadmin@{{ verify_ip }} id -un"
+      register: verify_login
+      changed_when: false
+      failed_when: verify_login.rc != 0 or verify_login.stdout != 'opsadmin'
+
+    - name: Sudo requires a password for opsadmin
+      delegate_to: localhost
+      ansible.builtin.command: "ssh {{ verify_ssh_opts }} opsadmin@{{ verify_ip }} sudo -n true"
+      register: verify_sudo_pw
+      changed_when: false
+      failed_when: verify_sudo_pw.rc == 0
+
+    - name: Passwordless sudo works only where configured (deploy)
+      delegate_to: localhost
+      ansible.builtin.command: "ssh {{ verify_ssh_opts }} deploy@{{ verify_ip }} sudo -n true"
+      register: verify_sudo_nopw
+      changed_when: false
+      failed_when: verify_sudo_nopw.rc != 0
+
+    - name: Users outside the SSH group are rejected even with a valid key
+      delegate_to: localhost
+      ansible.builtin.command: "ssh {{ verify_ssh_opts }} auditor@{{ verify_ip }} true"
+      register: verify_auditor
+      changed_when: false
+      failed_when: verify_auditor.rc == 0
+
+    - name: Root login is rejected
+      delegate_to: localhost
+      ansible.builtin.command: "ssh {{ verify_ssh_opts }} root@{{ verify_ip }} true"
+      register: verify_root
+      changed_when: false
+      failed_when: verify_root.rc == 0
+
+    - name: The server offers public key authentication only
+      delegate_to: localhost
+      ansible.builtin.command: >-
+        ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no
+        -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no nobody@{{ verify_ip }} true
+      register: verify_methods
+      changed_when: false
+      failed_when: verify_methods.rc == 0 or 'Permission denied (publickey)' not in verify_methods.stderr
+
+    - name: Weak ciphers are refused by the server
+      delegate_to: localhost
+      ansible.builtin.command: "ssh {{ verify_ssh_opts }} -o Ciphers=aes128-cbc opsadmin@{{ verify_ip }} true"
+      register: verify_cbc
+      changed_when: false
+      failed_when: verify_cbc.rc == 0
+
+    # -------------------------------------------------------------- sysctl
+    - name: Read live kernel parameters
+      ansible.builtin.command: "sysctl -n {{ item.key }}"
+      loop: "{{ kernel_hardening_sysctls | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+      register: verify_sysctl
+      changed_when: false
+
+    - name: Assert kernel parameters (CIS 3.3.x / 1.5.x)
+      ansible.builtin.assert:
+        that: item.stdout | trim == item.item.value | string
+        fail_msg: "{{ item.item.key }} is {{ item.stdout }}, expected {{ item.item.value }}"
+        quiet: true
+      loop: "{{ verify_sysctl.results }}"
+      loop_control:
+        label: "{{ item.item.key }}={{ item.stdout }}"
+
+    - name: Assert the settings are persisted for the next boot
+      ansible.builtin.command: "grep -c '=' /etc/sysctl.d/60-hardening.conf"
+      register: verify_sysctl_file
+      changed_when: false
+      failed_when: verify_sysctl_file.stdout | int < kernel_hardening_sysctls | length
+
+    - name: Assert unused filesystems and protocols are disabled (CIS 1.1.1.x / 3.2.x)
+      ansible.builtin.command: grep -Fx "install {{ item }} /bin/false" /etc/modprobe.d/60-hardening.conf
+      loop: "{{ kernel_hardening_disabled_filesystems + kernel_hardening_disabled_modules }}"
+      changed_when: false
+
+    # ------------------------------------------------------------ firewall
+    - name: Read ufw status
+      when: ansible_facts['os_family'] == 'Debian'
+      ansible.builtin.command: ufw status verbose
+      register: verify_ufw
+      changed_when: false
+
+    - name: Assert ufw is active with default deny inbound (CIS 3.5.1.x)
+      when: ansible_facts['os_family'] == 'Debian'
+      ansible.builtin.assert:
+        that:
+          - "'Status: active' in verify_ufw.stdout"
+          - "'deny (incoming)' in verify_ufw.stdout"
+          - verify_ufw.stdout is search('22/tcp\\s+ALLOW IN\\s+Anywhere')
+        quiet: true
+
+    - name: Read firewalld state
+      when: ansible_facts['os_family'] == 'RedHat'
+      ansible.builtin.command: "{{ item }}"
+      loop:
+        - firewall-cmd --state
+        - firewall-cmd --permanent --zone=public --get-target
+        - firewall-cmd --zone=public --list-ports
+        - firewall-cmd --zone=public --list-services
+      register: verify_firewalld
+      changed_when: false
+
+    - name: Assert firewalld drops unsolicited inbound traffic
+      when: ansible_facts['os_family'] == 'RedHat'
+      ansible.builtin.assert:
+        that:
+          - verify_firewalld.results[0].stdout == 'running'
+          - verify_firewalld.results[1].stdout == 'DROP'
+          - "'22/tcp' in verify_firewalld.results[2].stdout"
+          - "'cockpit' not in verify_firewalld.results[3].stdout"
+        quiet: true
+
+    # --------------------------------------------------------------- audit
+    - name: Read compiled audit rules
+      ansible.builtin.slurp:
+        src: /etc/audit/audit.rules
+      register: verify_audit_rules
+
+    - name: Assert CIS audit rules are compiled (CIS 6.2.3.x)
+      vars:
+        verify_rules: "{{ verify_audit_rules.content | b64decode }}"
+      ansible.builtin.assert:
+        that:
+          - verify_rules is search('-k ' ~ item)
+        fail_msg: "audit key {{ item }} missing from /etc/audit/audit.rules"
+        quiet: true
+      loop:
+        - scope
+        - user_emulation
+        - sudo_log_file
+        - time-change
+        - system-locale
+        - access
+        - identity
+        - perm_mod
+        - mounts
+        - session
+        - logins
+        - delete
+        - MAC-policy
+        - usermod
+        - kernel_modules
+
+    - name: Assert audit configuration is immutable (CIS 6.2.3.20)
+      ansible.builtin.assert:
+        that: (verify_audit_rules.content | b64decode).splitlines() | select('eq', '-e 2') | list | length == 1
+        quiet: true
+
+    - name: Read loaded kernel audit rules (VMs only)
+      when: ansible_facts['virtualization_type'] not in ['docker', 'podman', 'container', 'containerd', 'lxc']
+      ansible.builtin.command: auditctl -l
+      register: verify_auditctl
+      changed_when: false
+      failed_when: verify_auditctl.stdout_lines | length < 40
+
+    # ---------------------------------------------------------- services
+    - name: Collect service state
+      ansible.builtin.service_facts:
+
+    - name: Assert hardening services are running
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['services'][item]['state'] == 'running'
+        fail_msg: "{{ item }} is not running"
+        quiet: true
+      loop:
+        - "{{ 'ssh.service' if ansible_facts['os_family'] == 'Debian' else 'sshd.service' }}"
+        - "{{ 'chrony.service' if ansible_facts['os_family'] == 'Debian' else 'chronyd.service' }}"
+        - fail2ban.service
+        - node_exporter.service
+
+    - name: Assert the fail2ban sshd jail is loaded
+      ansible.builtin.command: fail2ban-client status sshd
+      changed_when: false
+
+    - name: Assert node_exporter serves metrics
+      ansible.builtin.uri:
+        url: http://127.0.0.1:9100/metrics
+        return_content: true
+      register: verify_metrics
+      failed_when: "'node_exporter_build_info' not in verify_metrics.content"
+
+    # ------------------------------------------------------------ accounts
+    - name: Read root shadow entry
+      ansible.builtin.getent:
+        database: shadow
+        key: root
+
+    - name: Assert root password is locked (CIS 5.4.2.x)
+      ansible.builtin.assert:
+        that: ansible_facts['getent_shadow']['root'][0].startswith('!')
+        quiet: true
+
+    - name: Assert sudo is hardened (CIS 5.2.x)
+      ansible.builtin.command: "grep -Fx '{{ item }}' /etc/sudoers.d/00-hardening"
+      loop:
+        - Defaults use_pty
+        - Defaults logfile="/var/log/sudo.log"
+      changed_when: false
+
+    - name: Assert automatic security updates are enabled
+      ansible.builtin.command: >-
+        {{ 'grep -Fq APT::Periodic::Unattended-Upgrade /etc/apt/apt.conf.d/20auto-upgrades'
+           if ansible_facts['os_family'] == 'Debian'
+           else 'systemctl is-enabled dnf-automatic.timer' }}
+      changed_when: false
+
+    - name: Assert journald limits are in place
+      ansible.builtin.command: grep -Fx "Storage=persistent" /etc/systemd/journald.conf.d/50-hardening.conf
+      changed_when: false

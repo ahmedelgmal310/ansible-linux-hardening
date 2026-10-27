@@ -1,0 +1,55 @@
+---
+- name: Install firewalld
+  ansible.builtin.dnf:
+    name:
+      - firewalld
+      - python3-firewall
+    state: present
+
+- name: Enable and start firewalld
+  ansible.builtin.systemd_service:
+    name: firewalld
+    enabled: true
+    state: started
+
+- name: Allow inbound ports from anywhere
+  ansible.posix.firewalld:
+    zone: "{{ firewall_firewalld_zone }}"
+    port: "{{ item.port | string | replace(':', '-') }}/{{ item.proto | default('tcp') }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ firewall_allow | selectattr('src', 'undefined') | list + firewall_allow | selectattr('src', 'defined') | selectattr('src', 'eq', 'any') | list }}"
+  loop_control:
+    label: "{{ item.port }}/{{ item.proto | default('tcp') }}"
+
+- name: Allow inbound ports from specific sources
+  ansible.posix.firewalld:
+    zone: "{{ firewall_firewalld_zone }}"
+    rich_rule: >-
+      rule family="{{ 'ipv6' if ':' in item.src else 'ipv4' }}"
+      source address="{{ item.src }}"
+      port port="{{ item.port | string | replace(':', '-') }}" protocol="{{ item.proto | default('tcp') }}" accept
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ firewall_allow | selectattr('src', 'defined') | rejectattr('src', 'eq', 'any') | list }}"
+  loop_control:
+    label: "{{ item.port }}/{{ item.proto | default('tcp') }} from {{ item.src }}"
+
+- name: Remove default services that are not on the allowlist
+  ansible.posix.firewalld:
+    zone: "{{ firewall_firewalld_zone }}"
+    service: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: disabled
+  loop: "{{ firewall_firewalld_remove_services }}"
+
+- name: Drop everything else arriving in the zone
+  ansible.posix.firewalld:
+    zone: "{{ firewall_firewalld_zone }}"
+    target: "{{ firewall_firewalld_target }}"
+    permanent: true
+    state: present
+  notify: Reload firewalld

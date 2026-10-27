@@ -1,0 +1,10 @@
+---
+audit_os_packages:
+  - auditd
+  - audispd-plugins
+audit_os_mac_paths:
+  - /etc/apparmor/
+  - /etc/apparmor.d/
+audit_os_network_paths:
+  - /etc/network/
+  - /etc/netplan/

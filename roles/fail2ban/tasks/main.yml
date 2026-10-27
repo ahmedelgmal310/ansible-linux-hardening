@@ -1,0 +1,23 @@
+---
+- name: Load distribution specific variables
+  ansible.builtin.include_vars: "{{ ansible_facts['os_family'] }}.yml"
+
+- name: Install fail2ban
+  ansible.builtin.package:
+    name: "{{ fail2ban_os_packages }}"
+    state: present
+
+- name: Deploy jail configuration
+  ansible.builtin.template:
+    src: jail.local.j2
+    dest: /etc/fail2ban/jail.d/zz-hardening.local
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart fail2ban
+
+- name: Enable and start fail2ban
+  ansible.builtin.systemd_service:
+    name: fail2ban
+    enabled: true
+    state: started

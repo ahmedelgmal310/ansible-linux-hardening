@@ -1,0 +1,12 @@
+---
+base_os_packages:
+  - dnf-automatic
+base_os_remove_packages:
+  - telnet
+  - rsh
+  - talk
+  - ypbind
+  - tftp
+base_os_chrony_conf: /etc/chrony.conf
+base_os_chrony_driftfile: /var/lib/chrony/drift
+base_os_chrony_service: chronyd

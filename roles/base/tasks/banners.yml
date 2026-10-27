@@ -1,0 +1,13 @@
+---
+- name: Write local login banner and message of the day
+  ansible.builtin.copy:
+    dest: "{{ item.dest }}"
+    content: "{{ item.content }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - { dest: /etc/issue, content: "{{ base_issue_text }}" }
+    - { dest: /etc/motd, content: "{{ base_motd_text }}" }
+  loop_control:
+    label: "{{ item.dest }}"

@@ -1,0 +1,34 @@
+---
+ansible_user: ops
+# rollout_serial / rollout_max_fail_percentage / target_hosts are play level
+# settings and must be passed with -e (see docs/rollout.md).
+
+# Replace the placeholder keys with real public keys before the first run:
+# once password authentication is disabled, a wrong key locks you out.
+users_admins:
+  - name: ops
+    comment: Operations
+    ssh_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPLACEHOLDERPLACEHOLDERPLACEHOLDERPLACEHO ops@example"
+    sudo: true
+    sudo_nopasswd: true
+  - name: alice
+    comment: Alice (on call)
+    ssh_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPLACEHOLDERPLACEHOLDERPLACEHOLDERPLACEHO alice@example"
+    sudo: true
+
+users_remove:
+  - games
+
+firewall_allow:
+  - { port: 22, proto: tcp, src: 10.0.0.0/8, comment: ssh from the management network }
+  - { port: 9100, proto: tcp, src: 10.0.30.0/24, comment: node_exporter scraped by monitoring }
+
+base_chrony_pools:
+  - time.example.internal
+
+fail2ban_ignoreip:
+  - 127.0.0.1/8
+  - ::1
+  - 10.0.0.0/8

@@ -1,0 +1,47 @@
+---
+- name: Load distribution specific variables
+  ansible.builtin.include_vars: "{{ ansible_facts['os_family'] }}.yml"
+
+- name: Install base packages (Debian family)
+  when: ansible_facts['os_family'] == 'Debian'
+  ansible.builtin.apt:
+    name: "{{ base_packages + base_os_packages + base_extra_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Enable EPEL (RHEL family)
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - base_enable_epel
+  ansible.builtin.dnf:
+    name: epel-release
+    state: present
+
+- name: Install base packages (RHEL family)
+  when: ansible_facts['os_family'] == 'RedHat'
+  ansible.builtin.dnf:
+    name: "{{ base_packages + base_os_packages + base_extra_packages }}"
+    state: present
+
+- name: Remove legacy insecure clients
+  ansible.builtin.package:
+    name: "{{ base_os_remove_packages + base_remove_packages }}"
+    state: absent
+
+- name: Configure time zone
+  ansible.builtin.import_tasks: timezone.yml
+
+- name: Configure chrony
+  ansible.builtin.import_tasks: chrony.yml
+
+- name: Configure automatic security updates
+  when: base_auto_security_updates
+  ansible.builtin.include_tasks: "updates-{{ ansible_facts['os_family'] }}.yml"
+
+- name: Configure journald
+  ansible.builtin.import_tasks: journald.yml
+
+- name: Configure login banners
+  when: base_manage_banners
+  ansible.builtin.import_tasks: banners.yml
